@@ -1,9 +1,12 @@
 import 'package:elo_vital/src/controller/auth_controller.dart';
+import 'package:elo_vital/src/controller/routine_controller.dart';
 import 'package:elo_vital/src/database/app_database.dart';
 import 'package:elo_vital/src/database/app_settings_local_repository.dart';
 import 'package:elo_vital/src/database/auth_local_repository.dart';
+import 'package:elo_vital/src/database/routine_local_repository.dart';
 import 'package:elo_vital/src/screens/splash_screen.dart';
 import 'package:elo_vital/src/services/auth_service.dart';
+import 'package:elo_vital/src/services/routine_service.dart';
 import 'package:elo_vital/src/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -34,12 +37,26 @@ class MyApp extends StatelessWidget {
           create: (context) =>
               AuthLocalRepository(appDatabase: context.read<AppDatabase>()),
         ),
+        Provider<RoutineLocalRepository>(
+          create: (context) =>
+              RoutineLocalRepository(appDatabase: context.read<AppDatabase>()),
+        ),
         Provider<AuthService>(create: (_) => AuthService()),
+        Provider<RoutineService>(
+          create: (context) =>
+              RoutineService(authService: context.read<AuthService>()),
+        ),
         ChangeNotifierProvider<AuthController>(
           create: (context) => AuthController(
             authLocalRepository: context.read<AuthLocalRepository>(),
             authService: context.read<AuthService>(),
             settingsRepository: context.read<AppSettingsLocalRepository>(),
+          ),
+        ),
+        ChangeNotifierProvider<RoutineController>(
+          create: (context) => RoutineController(
+            routineLocalRepository: context.read<RoutineLocalRepository>(),
+            routineService: context.read<RoutineService>(),
           ),
         ),
       ],
