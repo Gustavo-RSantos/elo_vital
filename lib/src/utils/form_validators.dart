@@ -31,4 +31,20 @@ class FormValidators {
     if (value!.length < 6) return 'A senha precisa ter pelo menos 6 caracteres.';
     return null;
   }
+
+  /// Número inteiro dentro de uma faixa (usado nas medições de saúde).
+  static String? integerInRange(
+    String? value, {
+    required String emptyMessage,
+    required int min,
+    required int max,
+    required String rangeMessage,
+  }) {
+    final emptyError = requiredField(value, emptyMessage);
+    if (emptyError != null) return emptyError;
+
+    final number = int.tryParse(value!.trim());
+    if (number == null || number < min || number > max) return rangeMessage;
+    return null;
+  }
 }

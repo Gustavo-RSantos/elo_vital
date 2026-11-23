@@ -1,12 +1,18 @@
 import 'package:elo_vital/src/controller/auth_controller.dart';
+import 'package:elo_vital/src/controller/measurement_controller.dart';
 import 'package:elo_vital/src/controller/routine_controller.dart';
+import 'package:elo_vital/src/controller/water_controller.dart';
 import 'package:elo_vital/src/database/app_database.dart';
 import 'package:elo_vital/src/database/app_settings_local_repository.dart';
 import 'package:elo_vital/src/database/auth_local_repository.dart';
+import 'package:elo_vital/src/database/measurement_local_repository.dart';
 import 'package:elo_vital/src/database/routine_local_repository.dart';
+import 'package:elo_vital/src/database/water_local_repository.dart';
 import 'package:elo_vital/src/screens/splash_screen.dart';
 import 'package:elo_vital/src/services/auth_service.dart';
+import 'package:elo_vital/src/services/measurement_service.dart';
 import 'package:elo_vital/src/services/routine_service.dart';
+import 'package:elo_vital/src/services/water_service.dart';
 import 'package:elo_vital/src/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -41,10 +47,27 @@ class MyApp extends StatelessWidget {
           create: (context) =>
               RoutineLocalRepository(appDatabase: context.read<AppDatabase>()),
         ),
+        Provider<MeasurementLocalRepository>(
+          create: (context) => MeasurementLocalRepository(
+            appDatabase: context.read<AppDatabase>(),
+          ),
+        ),
+        Provider<WaterLocalRepository>(
+          create: (context) =>
+              WaterLocalRepository(appDatabase: context.read<AppDatabase>()),
+        ),
         Provider<AuthService>(create: (_) => AuthService()),
         Provider<RoutineService>(
           create: (context) =>
               RoutineService(authService: context.read<AuthService>()),
+        ),
+        Provider<MeasurementService>(
+          create: (context) =>
+              MeasurementService(authService: context.read<AuthService>()),
+        ),
+        Provider<WaterService>(
+          create: (context) =>
+              WaterService(authService: context.read<AuthService>()),
         ),
         ChangeNotifierProvider<AuthController>(
           create: (context) => AuthController(
@@ -57,6 +80,19 @@ class MyApp extends StatelessWidget {
           create: (context) => RoutineController(
             routineLocalRepository: context.read<RoutineLocalRepository>(),
             routineService: context.read<RoutineService>(),
+          ),
+        ),
+        ChangeNotifierProvider<MeasurementController>(
+          create: (context) => MeasurementController(
+            measurementLocalRepository: context
+                .read<MeasurementLocalRepository>(),
+            measurementService: context.read<MeasurementService>(),
+          ),
+        ),
+        ChangeNotifierProvider<WaterController>(
+          create: (context) => WaterController(
+            waterLocalRepository: context.read<WaterLocalRepository>(),
+            waterService: context.read<WaterService>(),
           ),
         ),
       ],

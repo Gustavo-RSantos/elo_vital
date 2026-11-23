@@ -1,4 +1,5 @@
 import 'package:elo_vital/src/enums/activity_type_enum.dart';
+import 'package:elo_vital/src/enums/routine_status_enum.dart';
 
 /// Uma tarefa da rotina do dia: remédio, medição, água, exercício ou consulta.
 class RoutineItemModel {
@@ -7,7 +8,7 @@ class RoutineItemModel {
   final String title;
   final String subtitle;
   final DateTime scheduledAt;
-  final bool isDone;
+  final RoutineStatusEnum status;
 
   const RoutineItemModel({
     required this.id,
@@ -15,22 +16,27 @@ class RoutineItemModel {
     required this.title,
     required this.subtitle,
     required this.scheduledAt,
-    required this.isDone,
+    required this.status,
   });
 
-  RoutineItemModel copyWith({bool? isDone}) {
+  bool get isDone => status == RoutineStatusEnum.done;
+
+  bool get isSkipped => status == RoutineStatusEnum.skipped;
+
+  RoutineItemModel copyWith({RoutineStatusEnum? status}) {
     return RoutineItemModel(
       id: id,
       type: type,
       title: title,
       subtitle: subtitle,
       scheduledAt: scheduledAt,
-      isDone: isDone ?? this.isDone,
+      status: status ?? this.status,
     );
   }
 
   /// Contrato sugerido com a API: {"id": 1, "type": "medicine", "title": "...",
-  /// "subtitle": "...", "scheduledAt": "2026-11-20T07:30:00", "done": false}.
+  /// "subtitle": "...", "scheduledAt": "2026-11-20T07:30:00",
+  /// "status": "pending" | "done" | "skipped"}.
   /// Os valores de `type` são os nomes do ActivityTypeEnum. Ajustar com o backend.
   factory RoutineItemModel.fromJson(Map<String, dynamic> json) {
     return RoutineItemModel(
@@ -39,7 +45,7 @@ class RoutineItemModel {
       title: json['title'] as String,
       subtitle: json['subtitle'] as String,
       scheduledAt: DateTime.parse(json['scheduledAt'] as String),
-      isDone: json['done'] as bool,
+      status: RoutineStatusEnum.values.byName(json['status'] as String),
     );
   }
 }

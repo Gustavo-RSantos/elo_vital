@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:elo_vital/src/database/routine_local_repository.dart';
 import 'package:elo_vital/src/enums/activity_type_enum.dart';
 import 'package:elo_vital/src/enums/environment_enum.dart';
+import 'package:elo_vital/src/enums/routine_status_enum.dart';
 import 'package:elo_vital/src/models/routine_item_model.dart';
 import 'package:elo_vital/src/services/routine_service.dart';
 import 'package:elo_vital/src/utils/app_date_format.dart';
@@ -70,28 +71,39 @@ class RoutineController extends ChangeNotifier {
     }
   }
 
-  /// Marca ou desmarca uma tarefa. A tela atualiza na hora e volta ao estado
-  /// anterior se algo der errado.
-  Future<void> setDone(RoutineItemModel item, bool isDone) async {
+  /// Muda a situação de uma tarefa (feita, pulada ou pendente). A tela
+  /// atualiza na hora e volta ao estado anterior se algo der errado.
+  Future<void> setStatus(
+    RoutineItemModel item,
+    RoutineStatusEnum status,
+  ) async {
     final index = items.indexWhere((current) => current.id == item.id);
     if (index == -1) return;
 
     final previous = items[index];
     errorMessage = null;
-    items[index] = previous.copyWith(isDone: isDone);
+    items[index] = previous.copyWith(status: status);
     notifyListeners();
 
     try {
-      await routineLocalRepository.setDone(item.id, isDone);
+      await routineLocalRepository.setStatus(item.id, status);
       if (!_useLocalData) {
         // TODO(API): guardar numa fila de sincronização quando estiver offline.
-        await routineService.setDone(item.id, isDone);
+        await routineService.setStatus(item.id, status);
       }
     } catch (error) {
       items[index] = previous;
       errorMessage = ErrorMessageHelper.fromException(error);
     }
     notifyListeners();
+  }
+
+  /// Atalho para marcar como feita (true) ou voltar para pendente (false).
+  Future<void> setDone(RoutineItemModel item, bool isDone) {
+    return setStatus(
+      item,
+      isDone ? RoutineStatusEnum.done : RoutineStatusEnum.pending,
+    );
   }
 
   /// Limpa os dados ao sair da conta.

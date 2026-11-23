@@ -12,11 +12,20 @@ class ActivityCardWidget extends StatelessWidget {
     required this.item,
     required this.onComplete,
     required this.onUndo,
+    this.onDetails,
   });
 
   final RoutineItemModel item;
+
+  /// Ação principal do cartão (confirmar, abrir o registro da medição...).
   final VoidCallback onComplete;
+
+  /// Volta a tarefa para pendente (usado em "Feito" e "Pulado").
   final VoidCallback onUndo;
+
+  /// Abre os detalhes da tarefa (hoje, só para remédios). Se for nulo, o
+  /// link "Ver detalhes" não aparece.
+  final VoidCallback? onDetails;
 
   /// Consultas não têm botão aqui: o "Fui à consulta" vem no bloco de Consultas.
   String? get _actionLabel {
@@ -63,32 +72,7 @@ class ActivityCardWidget extends StatelessWidget {
                     Text(item.subtitle, style: textTheme.bodySmall),
                     if (actionLabel != null) ...[
                       const SizedBox(height: 12),
-                      if (item.isDone)
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.check_circle,
-                              color: AppColors.success,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Feito',
-                              style: textTheme.titleSmall?.copyWith(
-                                color: AppColors.successText,
-                              ),
-                            ),
-                            const Spacer(),
-                            TextButton(
-                              onPressed: onUndo,
-                              child: const Text('Desfazer'),
-                            ),
-                          ],
-                        )
-                      else
-                        ElevatedButton(
-                          onPressed: onComplete,
-                          child: Text(actionLabel),
-                        ),
+                      _buildActions(context, actionLabel),
                     ],
                   ],
                 ),
@@ -97,6 +81,44 @@ class ActivityCardWidget extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildActions(BuildContext context, String actionLabel) {
+    final textTheme = Theme.of(context).textTheme;
+
+    if (item.isDone || item.isSkipped) {
+      return Row(
+        children: [
+          Icon(
+            item.isDone ? Icons.check_circle : Icons.skip_next_outlined,
+            color: item.isDone ? AppColors.success : AppColors.textSecondary,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            item.isDone ? 'Feito' : 'Pulado',
+            style: textTheme.titleSmall?.copyWith(
+              color: item.isDone
+                  ? AppColors.successText
+                  : AppColors.textSecondary,
+            ),
+          ),
+          const Spacer(),
+          TextButton(onPressed: onUndo, child: const Text('Desfazer')),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton(onPressed: onComplete, child: Text(actionLabel)),
+        if (onDetails != null)
+          TextButton(
+            onPressed: onDetails,
+            child: const Text('Ver detalhes ou pular'),
+          ),
+      ],
     );
   }
 }

@@ -1,5 +1,12 @@
 import 'package:elo_vital/src/controller/auth_controller.dart';
 import 'package:elo_vital/src/controller/routine_controller.dart';
+import 'package:elo_vital/src/enums/activity_type_enum.dart';
+import 'package:elo_vital/src/enums/measurement_type_enum.dart';
+import 'package:elo_vital/src/enums/routine_status_enum.dart';
+import 'package:elo_vital/src/models/routine_item_model.dart';
+import 'package:elo_vital/src/screens/confirm_medicine_screen.dart';
+import 'package:elo_vital/src/screens/register_measurement_screen.dart';
+import 'package:elo_vital/src/screens/water_screen.dart';
 import 'package:elo_vital/src/utils/app_date_format.dart';
 import 'package:elo_vital/src/widgets/activity_card_widget.dart';
 import 'package:elo_vital/src/widgets/appointment_highlight_widget.dart';
@@ -31,6 +38,42 @@ class _HomeScreenState extends State<HomeScreen> {
     if (userId == null) return;
 
     await context.read<RoutineController>().loadToday(userId);
+  }
+
+  void _open(Widget screen) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
+  }
+
+  /// Botão principal do cartão: remédio e exercício confirmam na hora; a
+  /// medição e a água abrem a tela de registro.
+  void _handleAction(RoutineItemModel item) {
+    switch (item.type) {
+      case ActivityTypeEnum.medicine:
+      case ActivityTypeEnum.exercise:
+        context.read<RoutineController>().setStatus(
+          item,
+          RoutineStatusEnum.done,
+        );
+      case ActivityTypeEnum.measurement:
+        _open(
+          RegisterMeasurementScreen(
+            initialType: _measurementTypeFor(item),
+            routineItem: item,
+          ),
+        );
+      case ActivityTypeEnum.water:
+        _open(WaterScreen(routineItem: item));
+      case ActivityTypeEnum.appointment:
+        break;
+    }
+  }
+
+  /// Por enquanto o tipo vem do título. TODO(API): o backend deve informar o
+  /// tipo da medição na própria tarefa.
+  MeasurementTypeEnum _measurementTypeFor(RoutineItemModel item) {
+    return item.title.toLowerCase().contains('glicemia')
+        ? MeasurementTypeEnum.glucose
+        : MeasurementTypeEnum.bloodPressure;
   }
 
   @override
@@ -116,8 +159,11 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.only(bottom: 12),
             child: ActivityCardWidget(
               item: item,
-              onComplete: () => routineController.setDone(item, true),
+              onComplete: () => _handleAction(item),
               onUndo: () => routineController.setDone(item, false),
+              onDetails: item.type == ActivityTypeEnum.medicine
+                  ? () => _open(ConfirmMedicineScreen(item: item))
+                  : null,
             ),
           ),
       ],

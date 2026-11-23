@@ -1,5 +1,6 @@
 import 'package:elo_vital/src/database/app_database.dart';
 import 'package:elo_vital/src/enums/activity_type_enum.dart';
+import 'package:elo_vital/src/enums/routine_status_enum.dart';
 import 'package:elo_vital/src/models/routine_item_local_entity.dart';
 import 'package:elo_vital/src/models/routine_item_model.dart';
 import 'package:elo_vital/src/utils/app_date_format.dart';
@@ -36,11 +37,15 @@ class RoutineLocalRepository {
         .toList();
   }
 
-  Future<void> setDone(int id, bool isDone) async {
+  Future<void> setStatus(int id, RoutineStatusEnum status) async {
     final db = await appDatabase.database;
     await db.update(
       _table,
-      {'is_done': isDone ? 1 : 0},
+      {
+        'status': status.name,
+        // Coluna antiga (versão 2 do banco), mantida em sincronia.
+        'is_done': status == RoutineStatusEnum.done ? 1 : 0,
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -112,7 +117,7 @@ class RoutineLocalRepository {
           sample.hour,
           sample.minute,
         ),
-        isDone: false,
+        status: RoutineStatusEnum.pending,
       );
       batch.insert(_table, entity.toMap());
     }

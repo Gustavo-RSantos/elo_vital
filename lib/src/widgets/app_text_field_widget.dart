@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Campo de texto padrão do app: rótulo sempre visível, texto grande e
 /// mensagem de erro clara (o visual vem do tema).
@@ -17,6 +18,9 @@ class AppTextFieldWidget extends StatelessWidget {
     this.readOnly = false,
     this.onTap,
     this.suffixIcon,
+    this.suffixText,
+    this.inputFormatters,
+    this.textStyle,
     this.onFieldSubmitted,
   });
 
@@ -32,6 +36,9 @@ class AppTextFieldWidget extends StatelessWidget {
   final bool readOnly;
   final VoidCallback? onTap;
   final Widget? suffixIcon;
+  final String? suffixText;
+  final List<TextInputFormatter>? inputFormatters;
+  final TextStyle? textStyle;
   final ValueChanged<String>? onFieldSubmitted;
 
   @override
@@ -47,11 +54,13 @@ class AppTextFieldWidget extends StatelessWidget {
       readOnly: readOnly,
       onTap: onTap,
       onFieldSubmitted: onFieldSubmitted,
-      style: Theme.of(context).textTheme.bodyLarge,
+      inputFormatters: inputFormatters,
+      style: textStyle ?? Theme.of(context).textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         suffixIcon: suffixIcon,
+        suffixText: suffixText,
       ),
     );
   }

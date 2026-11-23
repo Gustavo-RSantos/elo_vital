@@ -6,9 +6,10 @@ import 'package:sqflite/sqflite.dart';
 ///
 /// Versão 1: users e app_settings (Bloco 2).
 /// Versão 2: routine_items (Bloco 3).
+/// Versão 3: coluna status em routine_items, measurements e water_logs (Bloco 4).
 class AppDatabase {
   static const String _databaseName = 'elo_vital.db';
-  static const int _databaseVersion = 2;
+  static const int _databaseVersion = 3;
 
   Database? _database;
 
@@ -27,15 +28,29 @@ class AppDatabase {
     );
   }
 
+  /// Instalação nova: cria direto o esquema mais recente.
   Future<void> _onCreate(Database db, int version) async {
     await _createUsersTable(db);
     await _createSettingsTable(db);
     await _createRoutineTable(db);
+    await _createMeasurementsTable(db);
+    await _createWaterLogsTable(db);
   }
 
+  /// Atualização de quem já tinha o app instalado.
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      await _createRoutineTable(db);
+      await _createRoutineTableV2(db);
+    }
+    if (oldVersion < 3) {
+      await db.execute(
+        "ALTER TABLE routine_items ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'",
+      );
+      await db.execute(
+        "UPDATE routine_items SET status = 'done' WHERE is_done = 1",
+      );
+      await _createMeasurementsTable(db);
+      await _createWaterLogsTable(db);
     }
   }
 
@@ -60,6 +75,7 @@ class AppDatabase {
     ''');
   }
 
+  /// Esquema atual da rotina (com status).
   Future<void> _createRoutineTable(Database db) {
     return db.execute('''
       CREATE TABLE routine_items (
@@ -69,7 +85,49 @@ class AppDatabase {
         title TEXT NOT NULL,
         subtitle TEXT NOT NULL,
         scheduled_at TEXT NOT NULL,
+        is_done INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'pending'
+      )
+    ''');
+  }
+
+  /// Esquema da versão 2 (sem status), usado só no caminho de atualização.
+  Future<void> _createRoutineTableV2(Database db) {
+    return db.execute('''
+      CREATE TABLE routine_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        subtitle TEXT NOT NULL,
+        scheduled_at TEXT NOT NULL,
         is_done INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+  }
+
+  Future<void> _createMeasurementsTable(Database db) {
+    return db.execute('''
+      CREATE TABLE measurements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        systolic INTEGER,
+        diastolic INTEGER,
+        glucose INTEGER,
+        glucose_moment TEXT,
+        measured_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createWaterLogsTable(Database db) {
+    return db.execute('''
+      CREATE TABLE water_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        amount_ml INTEGER NOT NULL,
+        logged_at TEXT NOT NULL
       )
     ''');
   }

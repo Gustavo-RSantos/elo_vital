@@ -1,4 +1,5 @@
 import 'package:elo_vital/src/enums/activity_type_enum.dart';
+import 'package:elo_vital/src/enums/routine_status_enum.dart';
 import 'package:elo_vital/src/models/routine_item_model.dart';
 
 /// Linha da tabela `routine_items` do SQLite.
@@ -9,7 +10,7 @@ class RoutineItemLocalEntity {
   final String title;
   final String subtitle;
   final DateTime scheduledAt;
-  final bool isDone;
+  final RoutineStatusEnum status;
 
   const RoutineItemLocalEntity({
     this.id,
@@ -18,7 +19,7 @@ class RoutineItemLocalEntity {
     required this.title,
     required this.subtitle,
     required this.scheduledAt,
-    required this.isDone,
+    required this.status,
   });
 
   factory RoutineItemLocalEntity.fromMap(Map<String, Object?> map) {
@@ -29,7 +30,7 @@ class RoutineItemLocalEntity {
       title: map['title'] as String,
       subtitle: map['subtitle'] as String,
       scheduledAt: DateTime.parse(map['scheduled_at'] as String),
-      isDone: (map['is_done'] as int) == 1,
+      status: RoutineStatusEnum.values.byName(map['status'] as String),
     );
   }
 
@@ -44,7 +45,7 @@ class RoutineItemLocalEntity {
       title: model.title,
       subtitle: model.subtitle,
       scheduledAt: model.scheduledAt,
-      isDone: model.isDone,
+      status: model.status,
     );
   }
 
@@ -56,7 +57,9 @@ class RoutineItemLocalEntity {
       'title': title,
       'subtitle': subtitle,
       'scheduled_at': scheduledAt.toIso8601String(),
-      'is_done': isDone ? 1 : 0,
+      'status': status.name,
+      // Coluna antiga (versão 2 do banco), mantida em sincronia com o status.
+      'is_done': status == RoutineStatusEnum.done ? 1 : 0,
     };
   }
 
@@ -67,7 +70,7 @@ class RoutineItemLocalEntity {
       title: title,
       subtitle: subtitle,
       scheduledAt: scheduledAt,
-      isDone: isDone,
+      status: status,
     );
   }
 }

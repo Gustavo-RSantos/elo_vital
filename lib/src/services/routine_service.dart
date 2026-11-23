@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:elo_vital/src/enums/environment_enum.dart';
+import 'package:elo_vital/src/enums/routine_status_enum.dart';
 import 'package:elo_vital/src/models/routine_item_model.dart';
 import 'package:elo_vital/src/services/auth_service.dart';
 import 'package:elo_vital/src/utils/app_date_format.dart';
@@ -12,8 +13,8 @@ import 'package:http/http.dart' as http;
 ///
 /// Contrato sugerido (ajustar com o backend):
 /// GET   /routine?date=2026-11-20  ->  [{"id", "type", "title", "subtitle",
-///                                      "scheduledAt", "done"}]
-/// PATCH /routine/{id}  {"done": true}
+///                                      "scheduledAt", "status"}]
+/// PATCH /routine/{id}  {"status": "pending" | "done" | "skipped"}
 class RoutineService {
   static const Duration _timeout = Duration(seconds: 5);
 
@@ -44,11 +45,11 @@ class RoutineService {
         .toList();
   }
 
-  Future<void> setDone(int id, bool isDone) async {
+  Future<void> setStatus(int id, RoutineStatusEnum status) async {
     final uri = Uri.parse('${EnvironmentEnum.apiBaseUrl.value}/routine/$id');
 
     final response = await http
-        .patch(uri, headers: _headers, body: jsonEncode({'done': isDone}))
+        .patch(uri, headers: _headers, body: jsonEncode({'status': status.name}))
         .timeout(_timeout);
     _checkStatus(response);
   }
