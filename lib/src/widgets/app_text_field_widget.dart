@@ -21,6 +21,7 @@ class AppTextFieldWidget extends StatelessWidget {
     this.suffixText,
     this.inputFormatters,
     this.textStyle,
+    this.maxLines = 1,
     this.onFieldSubmitted,
   });
 
@@ -39,6 +40,7 @@ class AppTextFieldWidget extends StatelessWidget {
   final String? suffixText;
   final List<TextInputFormatter>? inputFormatters;
   final TextStyle? textStyle;
+  final int maxLines;
   final ValueChanged<String>? onFieldSubmitted;
 
   @override
@@ -55,6 +57,7 @@ class AppTextFieldWidget extends StatelessWidget {
       onTap: onTap,
       onFieldSubmitted: onFieldSubmitted,
       inputFormatters: inputFormatters,
+      maxLines: maxLines,
       style: textStyle ?? Theme.of(context).textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: label,

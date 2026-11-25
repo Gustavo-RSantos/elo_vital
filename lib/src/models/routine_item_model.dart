@@ -10,6 +10,10 @@ class RoutineItemModel {
   final DateTime scheduledAt;
   final RoutineStatusEnum status;
 
+  /// Só nas consultas: id da consulta que originou esta tarefa (a tarefa é
+  /// montada na hora a partir da agenda de consultas).
+  final int? appointmentId;
+
   const RoutineItemModel({
     required this.id,
     required this.type,
@@ -17,6 +21,7 @@ class RoutineItemModel {
     required this.subtitle,
     required this.scheduledAt,
     required this.status,
+    this.appointmentId,
   });
 
   bool get isDone => status == RoutineStatusEnum.done;
@@ -31,6 +36,7 @@ class RoutineItemModel {
       subtitle: subtitle,
       scheduledAt: scheduledAt,
       status: status ?? this.status,
+      appointmentId: appointmentId,
     );
   }
 
@@ -46,6 +52,7 @@ class RoutineItemModel {
       subtitle: json['subtitle'] as String,
       scheduledAt: DateTime.parse(json['scheduledAt'] as String),
       status: RoutineStatusEnum.values.byName(json['status'] as String),
+      appointmentId: json['appointmentId'] as int?,
     );
   }
 }

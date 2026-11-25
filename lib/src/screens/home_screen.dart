@@ -1,9 +1,11 @@
+import 'package:elo_vital/src/controller/appointment_controller.dart';
 import 'package:elo_vital/src/controller/auth_controller.dart';
 import 'package:elo_vital/src/controller/routine_controller.dart';
 import 'package:elo_vital/src/enums/activity_type_enum.dart';
 import 'package:elo_vital/src/enums/measurement_type_enum.dart';
 import 'package:elo_vital/src/enums/routine_status_enum.dart';
 import 'package:elo_vital/src/models/routine_item_model.dart';
+import 'package:elo_vital/src/screens/appointment_detail_screen.dart';
 import 'package:elo_vital/src/screens/confirm_medicine_screen.dart';
 import 'package:elo_vital/src/screens/register_measurement_screen.dart';
 import 'package:elo_vital/src/screens/water_screen.dart';
@@ -37,7 +39,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final userId = context.read<AuthController>().currentUser?.id;
     if (userId == null) return;
 
-    await context.read<RoutineController>().loadToday(userId);
+    // Carrega a rotina e a agenda de consultas juntas (as consultas de hoje
+    // entram na lista do Início).
+    await Future.wait([
+      context.read<AppointmentController>().load(userId),
+      context.read<RoutineController>().loadToday(userId),
+    ]);
   }
 
   void _open(Widget screen) {
@@ -64,8 +71,13 @@ class _HomeScreenState extends State<HomeScreen> {
       case ActivityTypeEnum.water:
         _open(WaterScreen(routineItem: item));
       case ActivityTypeEnum.appointment:
-        break;
+        _openAppointment(item.appointmentId);
     }
+  }
+
+  void _openAppointment(int? appointmentId) {
+    if (appointmentId == null) return;
+    _open(AppointmentDetailScreen(appointmentId: appointmentId));
   }
 
   /// Por enquanto o tipo vem do título. TODO(API): o backend deve informar o
@@ -139,7 +151,10 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 16),
         ],
         if (appointment != null) ...[
-          AppointmentHighlightWidget(item: appointment),
+          AppointmentHighlightWidget(
+            item: appointment,
+            onTap: () => _openAppointment(appointment.appointmentId),
+          ),
           const SizedBox(height: 16),
         ],
         DayProgressCardWidget(

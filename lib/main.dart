@@ -1,14 +1,17 @@
+import 'package:elo_vital/src/controller/appointment_controller.dart';
 import 'package:elo_vital/src/controller/auth_controller.dart';
 import 'package:elo_vital/src/controller/measurement_controller.dart';
 import 'package:elo_vital/src/controller/routine_controller.dart';
 import 'package:elo_vital/src/controller/water_controller.dart';
 import 'package:elo_vital/src/database/app_database.dart';
 import 'package:elo_vital/src/database/app_settings_local_repository.dart';
+import 'package:elo_vital/src/database/appointment_local_repository.dart';
 import 'package:elo_vital/src/database/auth_local_repository.dart';
 import 'package:elo_vital/src/database/measurement_local_repository.dart';
 import 'package:elo_vital/src/database/routine_local_repository.dart';
 import 'package:elo_vital/src/database/water_local_repository.dart';
 import 'package:elo_vital/src/screens/splash_screen.dart';
+import 'package:elo_vital/src/services/appointment_service.dart';
 import 'package:elo_vital/src/services/auth_service.dart';
 import 'package:elo_vital/src/services/measurement_service.dart';
 import 'package:elo_vital/src/services/routine_service.dart';
@@ -56,10 +59,19 @@ class MyApp extends StatelessWidget {
           create: (context) =>
               WaterLocalRepository(appDatabase: context.read<AppDatabase>()),
         ),
+        Provider<AppointmentLocalRepository>(
+          create: (context) => AppointmentLocalRepository(
+            appDatabase: context.read<AppDatabase>(),
+          ),
+        ),
         Provider<AuthService>(create: (_) => AuthService()),
         Provider<RoutineService>(
           create: (context) =>
               RoutineService(authService: context.read<AuthService>()),
+        ),
+        Provider<AppointmentService>(
+          create: (context) =>
+              AppointmentService(authService: context.read<AuthService>()),
         ),
         Provider<MeasurementService>(
           create: (context) =>
@@ -76,10 +88,19 @@ class MyApp extends StatelessWidget {
             settingsRepository: context.read<AppSettingsLocalRepository>(),
           ),
         ),
+        ChangeNotifierProvider<AppointmentController>(
+          create: (context) => AppointmentController(
+            appointmentLocalRepository: context
+                .read<AppointmentLocalRepository>(),
+            routineLocalRepository: context.read<RoutineLocalRepository>(),
+            appointmentService: context.read<AppointmentService>(),
+          ),
+        ),
         ChangeNotifierProvider<RoutineController>(
           create: (context) => RoutineController(
             routineLocalRepository: context.read<RoutineLocalRepository>(),
             routineService: context.read<RoutineService>(),
+            appointmentController: context.read<AppointmentController>(),
           ),
         ),
         ChangeNotifierProvider<MeasurementController>(

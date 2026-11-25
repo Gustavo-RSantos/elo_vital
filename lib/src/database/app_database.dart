@@ -7,9 +7,10 @@ import 'package:sqflite/sqflite.dart';
 /// Versão 1: users e app_settings (Bloco 2).
 /// Versão 2: routine_items (Bloco 3).
 /// Versão 3: coluna status em routine_items, measurements e water_logs (Bloco 4).
+/// Versão 4: appointments e appointment_reminders (Bloco 5).
 class AppDatabase {
   static const String _databaseName = 'elo_vital.db';
-  static const int _databaseVersion = 3;
+  static const int _databaseVersion = 4;
 
   Database? _database;
 
@@ -35,6 +36,7 @@ class AppDatabase {
     await _createRoutineTable(db);
     await _createMeasurementsTable(db);
     await _createWaterLogsTable(db);
+    await _createAppointmentsTables(db);
   }
 
   /// Atualização de quem já tinha o app instalado.
@@ -51,6 +53,9 @@ class AppDatabase {
       );
       await _createMeasurementsTable(db);
       await _createWaterLogsTable(db);
+    }
+    if (oldVersion < 4) {
+      await _createAppointmentsTables(db);
     }
   }
 
@@ -128,6 +133,31 @@ class AppDatabase {
         user_id INTEGER NOT NULL,
         amount_ml INTEGER NOT NULL,
         logged_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createAppointmentsTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE appointments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        specialty TEXT NOT NULL,
+        doctor_name TEXT,
+        scheduled_at TEXT NOT NULL,
+        location TEXT,
+        preparation TEXT,
+        status TEXT NOT NULL DEFAULT 'scheduled',
+        post_notes TEXT,
+        origin_appointment_id INTEGER
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE appointment_reminders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        appointment_id INTEGER NOT NULL,
+        minutes_before INTEGER NOT NULL
       )
     ''');
   }

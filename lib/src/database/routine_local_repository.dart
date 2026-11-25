@@ -86,8 +86,15 @@ class RoutineLocalRepository {
 
     return db.query(
       _table,
-      where: 'user_id = ? AND scheduled_at >= ? AND scheduled_at < ?',
-      whereArgs: [userId, start.toIso8601String(), end.toIso8601String()],
+      // As consultas vêm da agenda de consultas (tabela appointments), então
+      // ficam de fora da rotina salva (inclui as consultas de exemplo antigas).
+      where: 'user_id = ? AND type != ? AND scheduled_at >= ? AND scheduled_at < ?',
+      whereArgs: [
+        userId,
+        ActivityTypeEnum.appointment.name,
+        start.toIso8601String(),
+        end.toIso8601String(),
+      ],
       orderBy: 'scheduled_at ASC',
     );
   }
@@ -99,7 +106,6 @@ class RoutineLocalRepository {
       _SeedItem(ActivityTypeEnum.measurement, 'Medir a pressão', 'Anote a máxima e a mínima', 9, 0),
       _SeedItem(ActivityTypeEnum.exercise, 'Caminhada leve', '20 minutos', 10, 30),
       _SeedItem(ActivityTypeEnum.medicine, 'Metformina', '1 comprimido, 850 mg', 12, 0),
-      _SeedItem(ActivityTypeEnum.appointment, 'Cardiologia', 'Dra. Helena Costa, Clínica Vida', 15, 0),
       _SeedItem(ActivityTypeEnum.medicine, 'Sinvastatina', '1 comprimido, 20 mg', 20, 0),
     ];
 

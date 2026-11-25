@@ -27,14 +27,14 @@ class ActivityCardWidget extends StatelessWidget {
   /// link "Ver detalhes" não aparece.
   final VoidCallback? onDetails;
 
-  /// Consultas não têm botão aqui: o "Fui à consulta" vem no bloco de Consultas.
+  /// Na consulta, o botão abre os detalhes (onde está o "Fui à consulta").
   String? get _actionLabel {
     return switch (item.type) {
       ActivityTypeEnum.medicine => 'Tomei',
       ActivityTypeEnum.measurement => 'Medir',
       ActivityTypeEnum.water => 'Registrar',
       ActivityTypeEnum.exercise => 'Fiz',
-      ActivityTypeEnum.appointment => null,
+      ActivityTypeEnum.appointment => 'Ver consulta',
     };
   }
 
@@ -86,6 +86,24 @@ class ActivityCardWidget extends StatelessWidget {
 
   Widget _buildActions(BuildContext context, String actionLabel) {
     final textTheme = Theme.of(context).textTheme;
+
+    if (item.type == ActivityTypeEnum.appointment) {
+      if (!item.isDone) {
+        return ElevatedButton(onPressed: onComplete, child: Text(actionLabel));
+      }
+      return Row(
+        children: [
+          const Icon(Icons.check_circle, color: AppColors.success),
+          const SizedBox(width: 8),
+          Text(
+            'Realizada',
+            style: textTheme.titleSmall?.copyWith(color: AppColors.successText),
+          ),
+          const Spacer(),
+          TextButton(onPressed: onComplete, child: Text(actionLabel)),
+        ],
+      );
+    }
 
     if (item.isDone || item.isSkipped) {
       return Row(

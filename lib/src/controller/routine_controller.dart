@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:elo_vital/src/controller/appointment_controller.dart';
 import 'package:elo_vital/src/database/routine_local_repository.dart';
 import 'package:elo_vital/src/enums/activity_type_enum.dart';
+import 'package:elo_vital/src/enums/appointment_status_enum.dart';
 import 'package:elo_vital/src/enums/environment_enum.dart';
 import 'package:elo_vital/src/enums/routine_status_enum.dart';
 import 'package:elo_vital/src/models/routine_item_model.dart';
@@ -13,22 +15,37 @@ import 'package:flutter/foundation.dart';
 
 /// Controla a rotina do dia. Com USE_LOCAL_DATA=true (padrão) usa o SQLite;
 /// com USE_LOCAL_DATA=false busca na API e, sem conexão, mostra o cache salvo.
+///
+/// As consultas de hoje não ficam na rotina salva: elas vêm da agenda de
+/// consultas (AppointmentController) e entram na lista na hora.
 class RoutineController extends ChangeNotifier {
   final RoutineLocalRepository routineLocalRepository;
   final RoutineService routineService;
+  final AppointmentController appointmentController;
 
   RoutineController({
     required this.routineLocalRepository,
     required this.routineService,
-  });
+    required this.appointmentController,
+  }) {
+    // Quando uma consulta muda, a rotina do Início se atualiza.
+    appointmentController.addListener(notifyListeners);
+  }
 
-  List<RoutineItemModel> items = [];
+  List<RoutineItemModel> _storedItems = [];
   bool isLoading = false;
   bool isOfflineMode = false;
   String? errorMessage;
   DateTime? lastSync;
 
   bool get _useLocalData => EnvironmentEnum.useLocalData.value == 'true';
+
+  /// Rotina salva + consultas de hoje, em ordem de horário.
+  List<RoutineItemModel> get items {
+    final merged = [..._storedItems, ..._todayAppointmentItems()];
+    merged.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+    return merged;
+  }
 
   int get totalCount => items.length;
 
@@ -53,7 +70,7 @@ class RoutineController extends ChangeNotifier {
 
     try {
       if (_useLocalData) {
-        items = await routineLocalRepository.getDay(
+        _storedItems = await routineLocalRepository.getDay(
           userId: userId,
           day: today,
           seedIfEmpty: true,
@@ -73,16 +90,17 @@ class RoutineController extends ChangeNotifier {
 
   /// Muda a situação de uma tarefa (feita, pulada ou pendente). A tela
   /// atualiza na hora e volta ao estado anterior se algo der errado.
+  /// As consultas não passam por aqui (são atualizadas pela agenda).
   Future<void> setStatus(
     RoutineItemModel item,
     RoutineStatusEnum status,
   ) async {
-    final index = items.indexWhere((current) => current.id == item.id);
+    final index = _storedItems.indexWhere((current) => current.id == item.id);
     if (index == -1) return;
 
-    final previous = items[index];
+    final previous = _storedItems[index];
     errorMessage = null;
-    items[index] = previous.copyWith(status: status);
+    _storedItems[index] = previous.copyWith(status: status);
     notifyListeners();
 
     try {
@@ -92,7 +110,7 @@ class RoutineController extends ChangeNotifier {
         await routineService.setStatus(item.id, status);
       }
     } catch (error) {
-      items[index] = previous;
+      _storedItems[index] = previous;
       errorMessage = ErrorMessageHelper.fromException(error);
     }
     notifyListeners();
@@ -108,7 +126,7 @@ class RoutineController extends ChangeNotifier {
 
   /// Limpa os dados ao sair da conta.
   void clear() {
-    items = [];
+    _storedItems = [];
     isLoading = false;
     isOfflineMode = false;
     errorMessage = null;
@@ -116,13 +134,45 @@ class RoutineController extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
+  void dispose() {
+    appointmentController.removeListener(notifyListeners);
+    super.dispose();
+  }
+
+  /// Consultas de hoje (agendadas ou realizadas) no formato da rotina. O id é
+  /// negativo para nunca bater com o id de uma tarefa salva.
+  List<RoutineItemModel> _todayAppointmentItems() {
+    return appointmentController
+        .forDay(DateTime.now())
+        .where(
+          (item) =>
+              item.status == AppointmentStatusEnum.scheduled ||
+              item.status == AppointmentStatusEnum.completed,
+        )
+        .map(
+          (item) => RoutineItemModel(
+            id: -item.id,
+            type: ActivityTypeEnum.appointment,
+            title: item.specialty,
+            subtitle: item.summaryLine,
+            scheduledAt: item.scheduledAt,
+            status: item.status == AppointmentStatusEnum.completed
+                ? RoutineStatusEnum.done
+                : RoutineStatusEnum.pending,
+            appointmentId: item.id,
+          ),
+        )
+        .toList();
+  }
+
   Future<void> _loadFromApi(int userId, DateTime today) async {
     try {
-      items = await routineService.fetchDay(today);
+      _storedItems = await routineService.fetchDay(today);
       await routineLocalRepository.replaceDay(
         userId: userId,
         day: today,
-        items: items,
+        items: _storedItems,
       );
       isOfflineMode = false;
     } on TimeoutException catch (error) {
@@ -137,7 +187,10 @@ class RoutineController extends ChangeNotifier {
   /// Sem conexão com a API: mostra o que ficou salvo no celular.
   Future<void> _loadFromCache(int userId, DateTime today, Object error) async {
     debugPrint('Sem API, usando o cache local: $error');
-    items = await routineLocalRepository.getDay(userId: userId, day: today);
+    _storedItems = await routineLocalRepository.getDay(
+      userId: userId,
+      day: today,
+    );
     isOfflineMode = true;
   }
 }

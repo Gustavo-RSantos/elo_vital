@@ -14,10 +14,21 @@ class AppDateFormat {
     return _capitalize(text);
   }
 
+  /// Ex.: "Quinta-feira, 20 de novembro de 2026".
+  static String fullDateWithYear(DateTime date) {
+    final text = DateFormat("EEEE, d 'de' MMMM 'de' yyyy", _locale).format(date);
+    return _capitalize(text);
+  }
+
   /// Ex.: "novembro de 2026" (para o calendário de consultas).
   static String monthYear(DateTime date) {
     final text = DateFormat("MMMM 'de' yyyy", _locale).format(date);
     return _capitalize(text);
+  }
+
+  /// Ex.: "12 de março".
+  static String dayMonth(DateTime date) {
+    return DateFormat("d 'de' MMMM", _locale).format(date);
   }
 
   /// Ex.: "20/11/2026".
@@ -70,6 +81,13 @@ class AppDateFormat {
       return 'Sincronizado há ${difference.inHours} h';
     }
     return 'Sincronizado em ${shortDate(lastSync)}';
+  }
+
+  /// Quantos dias de calendário faltam de [from] até [to] (negativo se já passou).
+  static int daysBetween(DateTime from, DateTime to) {
+    final start = DateTime.utc(from.year, from.month, from.day);
+    final end = DateTime.utc(to.year, to.month, to.day);
+    return end.difference(start).inDays;
   }
 
   static DateTime startOfDay(DateTime date) {

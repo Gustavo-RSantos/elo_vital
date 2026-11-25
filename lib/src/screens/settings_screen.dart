@@ -1,3 +1,4 @@
+import 'package:elo_vital/src/controller/appointment_controller.dart';
 import 'package:elo_vital/src/controller/auth_controller.dart';
 import 'package:elo_vital/src/controller/measurement_controller.dart';
 import 'package:elo_vital/src/controller/routine_controller.dart';
@@ -44,10 +45,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final routineController = context.read<RoutineController>();
     final measurementController = context.read<MeasurementController>();
     final waterController = context.read<WaterController>();
+    final appointmentController = context.read<AppointmentController>();
     await authController.logout();
     routineController.clear();
     measurementController.clear();
     waterController.clear();
+    appointmentController.clear();
     if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
